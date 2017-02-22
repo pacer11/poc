@@ -1,0 +1,47 @@
+[
+{
+    "_id": "58a9bb8c3c1c388d2023e3f7",
+    "index": 0,
+    "guid": "fb0498ca-1145-4d89-a9d2-148795267837",
+    "isActive": false,
+    "balance": "$3,484.74",
+    "picture": "http://placehold.it/32x32",
+    "age": 30,
+    "eyeColor": "green",
+    "name": "Freida Bolton",
+    "gender": "female",
+    "company": "COMVOY",
+    "email": "freidabolton@comvoy.com",
+    "phone": "+1 (895) 408-3067",
+    "address": "391 Sheffield Avenue, Tolu, Oklahoma, 9007",
+    "about": "Ad est et irure dolor. Sunt irure commodo occaecat sint adipisicing laboris tempor pariatur. Ullamco fugiat cillum officia consequat. Ex mollit eu ipsum ullamco labore.\r\n",
+    "registered": "2014-11-23T08:40:50 +05:00",
+    "latitude": -76.713369,
+    "longitude": 46.066712,
+    "tags": [
+      "do",
+      "et",
+      "enim",
+      "sint",
+      "aliqua",
+      "consequat",
+      "sint"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Sanchez Wilson"
+      },
+      {
+        "id": 1,
+        "name": "Robles Rose"
+      },
+      {
+        "id": 2,
+        "name": "Laura Gonzalez"
+      }
+    ],
+    "greeting": "Hello, Freida Bolton! You have 9 unread messages.",
+    "favoriteFruit": "banana"
+  }
+]
