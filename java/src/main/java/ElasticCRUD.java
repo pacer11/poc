@@ -10,6 +10,9 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.UpdateByQueryAction;
+import org.elasticsearch.index.reindex.UpdateByQueryRequest;
+import org.elasticsearch.index.reindex.UpdateByQueryRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
@@ -40,6 +43,7 @@ public class ElasticCRUD {
             IndexResponse response = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE, item.get("_id").toString())
                     .setSource(JsonHelper.mapToJSON(item))
                     .get();
+            transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
             System.out.println(response.getId());
            /** UpdateRequest updateRequest = new UpdateRequest();
             updateRequest.index(INDEX_NAME);
@@ -61,13 +65,13 @@ public class ElasticCRUD {
 
     }
 
-    public BasicObject insertBasicDocument() {
-        BasicObject simpleObject = new BasicObject("idtesting");
-        //simpleObject.put("docKey", new Date());
-        simpleObject.put("docKey", "testing");
-        BasicObject nestedObject = new BasicObject("innerIdtesting");
+    public DateObject insertBasicDocument() {
+        DateObject simpleObject = new DateObject("idtesting");
+        simpleObject.put("docKey", new Date());
+        //simpleObject.put("docKey", "testing");
+        //BasicObject nestedObject = new BasicObject("innerIdtesting");
        // nestedObject.put("innerDocKey", "myStringValue");
-        simpleObject.put("outerDocKey", nestedObject);
+        //simpleObject.put("outerDocKey", nestedObject);
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         try {
             IndexResponse indexResponse = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE)
@@ -80,15 +84,18 @@ public class ElasticCRUD {
         return simpleObject;
     }
 
-    public Iterator<BasicObject> getDocuemnts() {
+    //public Iterator<BasicObject> getDocuemntsDate() {
+      public Iterator<DateObject> getDocuments() {
         SearchResponse searchResponse =
                 transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).setQuery(QueryBuilders.matchAllQuery()).get();
         Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
-        return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
-            public BasicObject apply(SearchHit input) {
-                BasicObject output = null;
+        return Iterators.transform(searchHits, new Function<SearchHit, DateObject>() {
+            public DateObject apply(SearchHit input) {
+               //BasicObject output = null;
+                 DateObject output = null;
                 try {
-                    output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
+                   // output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
+                    output = objectMapper.readValue(input.getSourceAsString(), DateObject.class);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -96,5 +103,56 @@ public class ElasticCRUD {
             }
             }
         );
+    }
+
+    public Iterator<BasicObject> getDocuemntsObject() {
+        SearchResponse searchResponse =
+                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).setQuery(QueryBuilders.matchAllQuery()).get();
+        Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
+        return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
+                    public BasicObject apply(SearchHit input) {
+                        BasicObject output = null;
+                        try {
+                            output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return output;
+                    }
+                }
+        );
+    }
+
+    public Iterator<BasicObject> queryDocument(String jsonQueryString) {
+        SearchResponse searchResponse =
+                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).setQuery(QueryBuilders.wrapperQuery(jsonQueryString)).get();
+        Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
+        return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
+                    public BasicObject apply(SearchHit input) {
+                        BasicObject output = null;
+                        try {
+                            output = new BasicObject();
+                            output.putAll(input.getSource());
+                            //output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return output;
+                    }
+                }
+        );
+        /**List<BasicObject> basicObjectList = new ArrayList<BasicObject>();
+        while (searchHits.hasNext()) {
+            SearchHit hit = searchHits.next();
+            BasicObject basicObject = new BasicObject(hit.getId());
+            basicObject.putAll(hit.sourceAsMap());
+            basicObjectList.add(basicObject);
+        }
+        return basicObjectList.iterator(); **/
+    }
+
+    public boolean updateByQuery(String jsonQueryString) {
+       // UpdateByQueryRequestBuilder updateByQueryRequestBuilder = UpdateByQueryAction.INSTANCE.newRequestBuilder(transportClient).source(INDEX_NAME);
+        return false;
     }
 }

@@ -7,6 +7,8 @@ import pl.allegro.tech.embeddedelasticsearch.IndexSettings;
 import pl.allegro.tech.embeddedelasticsearch.PopularProperties;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 
 /**
@@ -27,12 +29,16 @@ public class ElasticSearchBaseTest {
    // protected static final Logger LOGGER = LoggerFactory.getLogger(InitializeESTesting.class);
 
     public ElasticSearchBaseTest() {
-        embeddedElastic = EmbeddedElastic.builder()
-                .withElasticVersion(elasticsearchVersion)
-                .withSetting(PopularProperties.TRANSPORT_TCP_PORT, PORT)
-                .withSetting(PopularProperties.CLUSTER_NAME, CLUSTER_NAME)
-                .withIndex(INDEX_NAME).build();
-                //.withIndex(INDEX_NAME, IndexSettings.builder().withType(DOC_TYPE, "{}").build()).build();
+        try {
+            embeddedElastic = EmbeddedElastic.builder()
+                  //  .withElasticVersion(elasticsearchVersion)
+                    .withSetting(PopularProperties.TRANSPORT_TCP_PORT, PORT)
+                    .withSetting(PopularProperties.CLUSTER_NAME, CLUSTER_NAME)
+                    .withDownloadUrl(new URL("file:///home/jfaniyi/Downloads/elasticsearch-5.0.0.zip"))
+                    .withIndex(INDEX_NAME).build();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }         
     }
 
 

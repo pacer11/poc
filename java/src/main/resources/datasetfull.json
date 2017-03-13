@@ -30,15 +30,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Sanchez Wilson"
+        "name": "Sanchez Wilson",
+        "type": "school"
       },
       {
         "id": 1,
-        "name": "Robles Rose"
+        "name": "Robles Rose",
+        "type": "work"
       },
       {
         "id": 2,
-        "name": "Laura Gonzalez"
+        "name": "Laura Gonzalez",
+        "type": "church"
       }
     ],
     "greeting": "Hello, Freida Bolton! You have 9 unread messages.",
@@ -75,15 +78,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Case Moody"
+        "name": "Case Moody",
+        "type": "school"
       },
       {
         "id": 1,
-        "name": "Peterson Rojas"
+        "name": "Peterson Rojas",
+        "type": "school"
       },
       {
         "id": 2,
-        "name": "Lacy Oneill"
+        "name": "Lacy Oneill",
+        "type": "work"
       }
     ],
     "greeting": "Hello, Gonzalez Robbins! You have 9 unread messages.",
@@ -120,15 +126,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Gardner Weaver"
+        "name": "Gardner Weaver",
+        "type": "school"
       },
       {
         "id": 1,
-        "name": "Cain Meyers"
+        "name": "Cain Meyers",
+        "type": "work"
       },
       {
         "id": 2,
-        "name": "Rhoda Harrison"
+        "name": "Rhoda Harrison",
+        "type": "work"
       }
     ],
     "greeting": "Hello, Bruce Powell! You have 2 unread messages.",
@@ -165,15 +174,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Aimee Savage"
+        "name": "Aimee Savage",
+        "type": "school"
       },
       {
         "id": 1,
-        "name": "Corina Flores"
+        "name": "Corina Flores",
+        "type": "church"
       },
       {
         "id": 2,
-        "name": "Todd Tanner"
+        "name": "Todd Tanner",
+        "type": "church"
       }
     ],
     "greeting": "Hello, Nguyen Cunningham! You have 10 unread messages.",
@@ -210,15 +222,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Kaufman Owen"
+        "name": "Kaufman Owen",
+        "type": "church"
       },
       {
         "id": 1,
-        "name": "Nettie Nixon"
+        "name": "Nettie Nixon",
+        "type": "school"
       },
       {
         "id": 2,
-        "name": "Solis Whitehead"
+        "name": "Solis Whitehead",
+        "type": "church"
       }
     ],
     "greeting": "Hello, Deborah Cline! You have 9 unread messages.",
@@ -255,15 +270,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Snider Bowers"
+        "name": "Snider Bowers",
+        "type": "work"
       },
       {
         "id": 1,
-        "name": "Shields Sampson"
+        "name": "Shields Sampson",
+        "type": "school"
       },
       {
         "id": 2,
-        "name": "Martha Logan"
+        "name": "Martha Logan",
+        "type": "work"
       }
     ],
     "greeting": "Hello, Effie Ballard! You have 1 unread messages.",
@@ -300,15 +318,18 @@
     "friends": [
       {
         "id": 0,
-        "name": "Jacquelyn Whitney"
+        "name": "Jacquelyn Whitney",
+        "type": "school"
       },
       {
         "id": 1,
-        "name": "Tania Burton"
+        "name": "Tania Burton",
+        "type": "school"
       },
       {
         "id": 2,
-        "name": "Patrice Ferguson"
+        "name": "Patrice Ferguson",
+        "type": "church"
       }
     ],
     "greeting": "Hello, Lily Blair! You have 10 unread messages.",
