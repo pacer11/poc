@@ -71,24 +71,23 @@ public class ElasticSearchTest {
     }**/
 
     @Test
-    @Ignore
     public void testSimpleInsert() {
         ElasticCRUD elastic = new ElasticCRUD(testBase.transportClient);
-        DateObject insertedItem = elastic.insertBasicDocument();
+        //DateObject insertedItem = elastic.insertBasicDocument();
+        BasicObject insertedItem = elastic.insertBasicDocument();
 
        Iterator<BasicObject> results = elastic.getDocuemntsObject();
         //Iterator<DateObject> results = elastic.getDocuments();
        while (results.hasNext()) {
            BasicObject item = results.next();
            //DateObject item = results.next();
-            System.out.println(item);
-            System.out.println(insertedItem);
             Assert.assertEquals(insertedItem, item);
         }
 
     }
 
     @Test
+    @Ignore
     public void testInsertQuery() throws Exception {
         MongoToESJSON mongoToESJSON = new MongoToESJSON();
         ElasticCRUD elastic = new ElasticCRUD(testBase.transportClient);

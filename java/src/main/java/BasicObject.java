@@ -1,4 +1,5 @@
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.json.simple.JSONObject;
 
 import java.util.Map;
 import java.util.Set;
@@ -10,15 +11,13 @@ import java.util.TreeMap;
 public class BasicObject {
 
     private String id;
-    private Map<String, Object> documentMap;
+    private Map<String, Object> documentMap = new TreeMap<String, Object>();
 
     public BasicObject() {
-        documentMap = new TreeMap<String, Object>();
     }
 
     public BasicObject(String id) {
         this.id = id;
-        documentMap = new TreeMap<String, Object>();
     }
 
     public BasicObject(Map<String, Object> map) {
@@ -40,11 +39,34 @@ public class BasicObject {
        documentMap.put(key, value);
     }
 
-    public void putAll(Map<String, Object> input) { documentMap.putAll(input);}
+    public void putAll(Map<String, Object> input) {
+        documentMap.putAll(input);
+    }
+
+    public String toJSON() {
+        return buildJSON(this).toString();
+    }
+
+    public void remove(String key) { documentMap.remove(key);}
 
     public int size() { return documentMap.size();}
 
+    public String getId() { return id;}
+
     public boolean containsKey(String key) { return documentMap.containsKey(key);}
+
+    private JSONObject buildJSON(BasicObject basicObject) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", basicObject.getId());
+        for (Map.Entry<String, Object> item : basicObject.entrySet()) {
+            if (BasicObject.class.isInstance(item.getValue())) {
+                jsonObject.put(item.getKey(), buildJSON((BasicObject)item.getValue()));
+            } else {
+                jsonObject.put(item.getKey(), item.getValue());
+            }
+        }
+        return jsonObject;
+    }
 
     @Override
     public String toString() {

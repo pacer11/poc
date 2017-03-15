@@ -1,3 +1,4 @@
+import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -5,18 +6,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import io.searchbox.client.JestClient;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.UpdateByQueryAction;
 import org.elasticsearch.index.reindex.UpdateByQueryRequest;
 import org.elasticsearch.index.reindex.UpdateByQueryRequestBuilder;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by jfaniyi on 2/19/17.
@@ -27,7 +39,6 @@ public class ElasticCRUD {
     private static final String DOC_TYPE = "docs";
 
     private Client transportClient;
-    private JestClient jestClient;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -35,7 +46,6 @@ public class ElasticCRUD {
     public ElasticCRUD(Client transportClient) {
         this.transportClient = transportClient;
     }
-    public ElasticCRUD(JestClient jestClient) { this.jestClient = jestClient; }
 
     public void insertDocument() throws Exception {
         List<Map<String, Object>> items = JsonHelper.loadJson();
@@ -44,50 +54,67 @@ public class ElasticCRUD {
                     .setSource(JsonHelper.mapToJSON(item))
                     .get();
             transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
-            System.out.println(response.getId());
-           /** UpdateRequest updateRequest = new UpdateRequest();
-            updateRequest.index(INDEX_NAME);
-            updateRequest.type(DOC_TYPE);
-            updateRequest.id(item.get("_id").toString());
-            updateRequest.doc(XContentFactory.jsonBuilder().startObject()
-                    .field("name","value").field("name1", "value1").endObject());
-           UpdateResponse response = transportClient.(updateRequest).get();
-           System.out.println(response.getId()); **/
-           //for (String key : item.keySet()) {
-            //    builder.field(key, item.get(key));
-            //}
-           // builder.endObject();
-           // UpdateResponse response = transportClient
-           //         .prepareUpdate(INDEX_NAME, DOC_TYPE, )
-           //         .setUpsert(builder).get();
-           // System.out.println(response.getId());
         }
 
     }
 
-    public DateObject insertBasicDocument() {
-        DateObject simpleObject = new DateObject("idtesting");
-        simpleObject.put("docKey", new Date());
+    public void insertDocumentBulk() throws Exception {
+        List<Map<String, Object>> items = JsonHelper.loadJson();
+        BulkRequestBuilder builder = transportClient.prepareBulk();
+        IndexRequestBuilder indexBuilder = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE);
+        for (Map<String, Object> item : items) {
+            indexBuilder.setId(item.get("_id").toString()).setSource(JsonHelper.mapToJSON(item));
+            builder.add(indexBuilder);
+        }
+        BulkResponse response = builder.get();
+        transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
+    }
+
+   // public DateObject insertBasicDocument() {
+      public BasicObject insertBasicDocument() {
+        //DateObject simpleObject = new DateObject("idtesting");
+        //simpleObject.put("docKey", new Date());
         //simpleObject.put("docKey", "testing");
-        //BasicObject nestedObject = new BasicObject("innerIdtesting");
-       // nestedObject.put("innerDocKey", "myStringValue");
-        //simpleObject.put("outerDocKey", nestedObject);
-        objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        try {
-            IndexResponse indexResponse = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE)
-                    .setSource(objectMapper.writeValueAsString(simpleObject)).get();
-            System.out.println(indexResponse.getId());
+          BasicObject simpleObject = new BasicObject("idtesting");
+          simpleObject.put("dockey", "docvalue");
+         // simpleObject.put("dockey2", new Date());
+          BasicObject nestedObject = new BasicObject("innerIdtesting");
+          nestedObject.put("innerDocKey", "myStringValue");
+         simpleObject.put("outerDocKey", nestedObject);
+         System.out.println("Json to string" + simpleObject.toJSON());
+        IndexResponse indexResponse = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE, simpleObject.getId())
+                    .setSource(simpleObject.toJSON()).get();
             transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
-        } catch (JsonProcessingException e) {
+            getIndexMappting();
+        return simpleObject;
+    }
+
+    public void getIndexMappting() {
+        List<String> fieldList = new ArrayList<String>();
+
+        ClusterState cs = transportClient.admin().cluster().prepareState().setIndices(INDEX_NAME).execute().actionGet().getState();
+        IndexMetaData imd = cs.getMetaData().index(INDEX_NAME);
+        MappingMetaData mdd = imd.mapping(DOC_TYPE);
+        Map<String, Object> map = null;
+
+        try {
+            map = mdd.getSourceAsMap();
+            System.out.println(map);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        return simpleObject;
+        fieldList = getList("", map);
+
+        System.out.println("Field List:");
+        for (String field : fieldList) {
+            System.out.println(field);
+        }
     }
 
     //public Iterator<BasicObject> getDocuemntsDate() {
       public Iterator<DateObject> getDocuments() {
         SearchResponse searchResponse =
-                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).setQuery(QueryBuilders.matchAllQuery()).get();
+                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).addSort("_uid", SortOrder.ASC).setQuery(QueryBuilders.matchAllQuery()).get();
         Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
         return Iterators.transform(searchHits, new Function<SearchHit, DateObject>() {
             public DateObject apply(SearchHit input) {
@@ -107,16 +134,13 @@ public class ElasticCRUD {
 
     public Iterator<BasicObject> getDocuemntsObject() {
         SearchResponse searchResponse =
-                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).setQuery(QueryBuilders.matchAllQuery()).get();
+                transportClient.prepareSearch(INDEX_NAME).setTypes(DOC_TYPE).addSort("_uid", SortOrder.ASC).setQuery(QueryBuilders.matchAllQuery()).get();
         Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
         return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
                     public BasicObject apply(SearchHit input) {
-                        BasicObject output = null;
-                        try {
-                            output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        BasicObject output = new BasicObject(input.getId());
+                            output.putAll(input.sourceAsMap());
+                            output.remove("id");
                         return output;
                     }
                 }
@@ -141,18 +165,25 @@ public class ElasticCRUD {
                     }
                 }
         );
-        /**List<BasicObject> basicObjectList = new ArrayList<BasicObject>();
-        while (searchHits.hasNext()) {
-            SearchHit hit = searchHits.next();
-            BasicObject basicObject = new BasicObject(hit.getId());
-            basicObject.putAll(hit.sourceAsMap());
-            basicObjectList.add(basicObject);
-        }
-        return basicObjectList.iterator(); **/
     }
 
     public boolean updateByQuery(String jsonQueryString) {
        // UpdateByQueryRequestBuilder updateByQueryRequestBuilder = UpdateByQueryAction.INSTANCE.newRequestBuilder(transportClient).source(INDEX_NAME);
         return false;
+    }
+
+    private static List<String> getList(String fieldName, Map<String, Object> mapProperties) {
+        List<String> fieldList = new ArrayList<String>();
+        Map<String, Object> map = (Map<String, Object>) mapProperties.get("properties");
+        Set<String> keys = map.keySet();
+        for (String key : keys) {
+            if (((Map<String, Object>) map.get(key)).containsKey("type")) {
+                fieldList.add(fieldName + "" + key);
+            } else {
+                List<String> tempList = getList(fieldName + "" + key + ".", (Map<String, Object>) map.get(key));
+                fieldList.addAll(tempList);
+            }
+        }
+        return fieldList;
     }
 }

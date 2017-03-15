@@ -58,13 +58,21 @@ public class MongoToESJSON {
                     throw new UnsupportedOperationException();
             } else if (BasicObject.class.isInstance(value) && ((BasicObject) value).size() ==1 && ((BasicObject)value).containsKey("$in")) {
                     List list = (List) ((BasicObject)value).get("$in");
-                    JSONObject filterValue = new JSONObject();
-                    JSONObject termsValue = new JSONObject();
-                    JSONObject keyValue = new JSONObject();
-                    keyValue.put(key, list.toString());
-                    termsValue.put("terms", keyValue);
-                    filterValue.put("filter", termsValue);
-                    jsonObject.put("filtered", filterValue);
+                    JSONObject shouldValue = new JSONObject();
+                    List<JSONObject> matchValueList = new ArrayList<JSONObject>();
+                    JSONObject keyValue = null;
+                    for (Object listItem : list) {
+                        keyValue = new JSONObject();
+                        if (Integer.class.isInstance(listItem)) {
+                            listItem = String.valueOf(listItem);
+                        } else {
+                            listItem = (String)listItem;
+                        }
+                        keyValue.put(key, listItem);
+                        matchValueList.add(keyValue);
+                    }
+                    shouldValue.put("should", matchValueList);
+                    jsonObject.put("bool", shouldValue);
             } else if (BasicObject.class.isInstance(value) && ((BasicObject) value).size() ==1 && ((BasicObject)value).containsKey("$gt")) {
                     JSONObject rangeValue = new JSONObject();
                     JSONObject logicalValue = new JSONObject();
