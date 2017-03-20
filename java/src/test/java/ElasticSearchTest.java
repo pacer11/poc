@@ -2,9 +2,11 @@
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
 import io.searchbox.client.config.HttpClientConfig;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.json.simple.JSONObject;
 import org.junit.*;
 
 import java.io.IOException;
@@ -21,6 +23,9 @@ public class ElasticSearchTest {
 
     private static ElasticSearchBaseTest testBase;
     private static JestClient client;
+
+    private static final String INDEX_NAME = "people";
+    private static final String DOC_TYPE = "docs";
 
     @BeforeClass
     public static void startElasticClient() {
@@ -62,6 +67,7 @@ public class ElasticSearchTest {
     @Before
     public void refresh() {
         testBase.embeddedElastic.refreshIndices();
+        populateMapping();
     }
 
     /**@Test
@@ -160,5 +166,16 @@ public class ElasticSearchTest {
             rangeCounter++;
         }
         Assert.assertEquals("Range Counter should be 2", 2, rangeCounter);
+    }
+
+    private void populateMapping() {
+        PutMappingRequestBuilder builder =
+                testBase.transportClient.admin().indices().preparePutMapping(INDEX_NAME).setType(DOC_TYPE);
+        JSONObject metaDataValue = new JSONObject();
+        JSONObject dateValue = new JSONObject();
+        dateValue.put("createDate", "java.util.Date");
+        metaDataValue.put("_meta", dateValue);
+        System.out.println(metaDataValue.toString());
+        builder.setSource(metaDataValue.toJSONString()).get();
     }
 }

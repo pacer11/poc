@@ -62,7 +62,7 @@ public class BasicObject {
             if (BasicObject.class.isInstance(item.getValue())) {
                 jsonObject.put(item.getKey(), buildJSON((BasicObject)item.getValue()));
             } else {
-                jsonObject.put(item.getKey(), item.getValue());
+                jsonObject.put(item.getKey(), item.getValue().toString());
             }
         }
         return jsonObject;

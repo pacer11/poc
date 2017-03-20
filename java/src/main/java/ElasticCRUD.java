@@ -77,7 +77,7 @@ public class ElasticCRUD {
         //simpleObject.put("docKey", "testing");
           BasicObject simpleObject = new BasicObject("idtesting");
           simpleObject.put("dockey", "docvalue");
-         // simpleObject.put("dockey2", new Date());
+          simpleObject.put("createDate", new Date());
           BasicObject nestedObject = new BasicObject("innerIdtesting");
           nestedObject.put("innerDocKey", "myStringValue");
          simpleObject.put("outerDocKey", nestedObject);
@@ -91,7 +91,6 @@ public class ElasticCRUD {
 
     public void getIndexMappting() {
         List<String> fieldList = new ArrayList<String>();
-
         ClusterState cs = transportClient.admin().cluster().prepareState().setIndices(INDEX_NAME).execute().actionGet().getState();
         IndexMetaData imd = cs.getMetaData().index(INDEX_NAME);
         MappingMetaData mdd = imd.mapping(DOC_TYPE);
@@ -139,6 +138,24 @@ public class ElasticCRUD {
         return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
                     public BasicObject apply(SearchHit input) {
                         BasicObject output = new BasicObject(input.getId());
+                            Map<String, Object> resultMap = input.sourceAsMap();
+                            for (Map.Entry<String, Object> resultEntry : resultMap.entrySet()) {
+                                Map<String, Object> metaDateMap = getMetaData();
+                                if (metaDateMap.containsKey(resultEntry.getKey())) {
+                                    try {
+                                        Class<?> className = Class.forName((String)metaDateMap.get(resultEntry.getKey()));
+                                        if (Date.class.isAssignableFrom(className)) {
+                                            Date dateObject = ((Date) className.newInstance());
+                                            dateObject.setTime(Integer.valueOf((Integer) resultEntry.getValue()));
+                                            output.put(resultEntry.getKey(), dateObject);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    output.putAll(resultMap);
+                                }
+                            }
                             output.putAll(input.sourceAsMap());
                             output.remove("id");
                         return output;
@@ -185,5 +202,26 @@ public class ElasticCRUD {
             }
         }
         return fieldList;
+    }
+
+    private Map<String, Object> getMetaData() {
+        ClusterState cs = transportClient.admin().cluster().prepareState().setIndices(INDEX_NAME).execute().actionGet().getState();
+        IndexMetaData imd = cs.getMetaData().index(INDEX_NAME);
+        MappingMetaData mdd = imd.mapping(DOC_TYPE);
+        Map<String, Object> map = null;
+
+        try {
+            map = mdd.getSourceAsMap();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Map<String, Object> metaDataMap = new HashMap<String, Object>();
+        Map<String, Object> metaMap = (Map<String, Object>) map.get("_meta");
+        Set<String> keys = map.keySet();
+        for (String key : keys) {
+            metaDataMap.put(key, map.get(key));
+        }
+        return metaDataMap;
     }
 }
