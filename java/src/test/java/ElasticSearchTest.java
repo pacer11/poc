@@ -174,6 +174,7 @@ public class ElasticSearchTest {
         JSONObject metaDataValue = new JSONObject();
         JSONObject dateValue = new JSONObject();
         dateValue.put("createDate", "java.util.Date");
+        dateValue.put("createZonedDateTime", "java.time.ZonedDateTime");
         metaDataValue.put("_meta", dateValue);
         System.out.println(metaDataValue.toString());
         builder.setSource(metaDataValue.toJSONString()).get();

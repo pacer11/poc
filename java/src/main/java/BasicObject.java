@@ -1,6 +1,11 @@
+import com.google.gson.*;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.json.simple.JSONObject;
 
+import java.lang.reflect.Type;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -12,6 +17,33 @@ public class BasicObject {
 
     private String id;
     private Map<String, Object> documentMap = new TreeMap<String, Object>();
+
+
+    public Gson BuilderSerializer() {
+        //return new GsonBuilder().create();
+       return new GsonBuilder().registerTypeAdapter(ZonedDateTime.class, new JsonSerializer<ZonedDateTime>() {
+            @Override
+            public JsonElement serialize(ZonedDateTime zonedDateTime,
+                                         Type typeOfT,
+                                         JsonSerializationContext context) {
+                DateTimeFormatter fmt = DateTimeFormatter.ISO_INSTANT.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n'Z'").withZone(ZoneId.of("UTC"));
+                return new JsonPrimitive(fmt.format(zonedDateTime));
+            }
+        }).create();
+    }
+    public Gson BuilderDeserializer() {
+        //return new GsonBuilder().create();
+        return new GsonBuilder().registerTypeAdapter(ZonedDateTime.class, new JsonDeserializer<ZonedDateTime>() {
+            @Override
+            public ZonedDateTime deserialize(JsonElement jsonElement,
+                                         Type typeOfT,
+                                         JsonDeserializationContext context) {
+                DateTimeFormatter fmt = DateTimeFormatter.ISO_INSTANT.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n'Z'").withZone(ZoneId.of("UTC"));
+                return ZonedDateTime.parse(jsonElement.getAsString(), fmt);
+            }
+        }).create();
+    }
+    //Gson gson = getBuilder().create();
 
     public BasicObject() {
     }
@@ -43,9 +75,9 @@ public class BasicObject {
         documentMap.putAll(input);
     }
 
-    public String toJSON() {
-        return buildJSON(this).toString();
-    }
+    public String toJSON() { return BuilderSerializer().toJson(this, BasicObject.class);}
+
+    //public String toJSON() {return buildJSON(this).toString();}
 
     public void remove(String key) { documentMap.remove(key);}
 
@@ -81,4 +113,11 @@ public class BasicObject {
         return new EqualsBuilder().append(documentMap,
                 ((BasicObject)compare).documentMap).isEquals();
     }
+
+   // static class BasicObjectSerializer implements JsonSerializer<BasicObject> {
+   //     @Override
+   //     public JsonElement serialize(BasicObject src, Type typeOfSrc, JsonSerializationContext context) {
+   //         return new JsonPrimitive(src.toJSON());
+   //     }
+   // }
 }

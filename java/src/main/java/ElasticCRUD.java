@@ -27,6 +27,9 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -41,6 +44,7 @@ public class ElasticCRUD {
     private Client transportClient;
 
     private ObjectMapper objectMapper = new ObjectMapper();
+    DateTimeFormatter fmt = DateTimeFormatter.ISO_INSTANT.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n'Z'").withZone(ZoneId.of("UTC"));
 
 
     public ElasticCRUD(Client transportClient) {
@@ -78,6 +82,8 @@ public class ElasticCRUD {
           BasicObject simpleObject = new BasicObject("idtesting");
           simpleObject.put("dockey", "docvalue");
           simpleObject.put("createDate", new Date());
+          simpleObject.put("createZonedDateTime", ZonedDateTime.now());
+          //simpleObject.put("createDate", new Date());
           BasicObject nestedObject = new BasicObject("innerIdtesting");
           nestedObject.put("innerDocKey", "myStringValue");
          simpleObject.put("outerDocKey", nestedObject);
@@ -121,6 +127,7 @@ public class ElasticCRUD {
                  DateObject output = null;
                 try {
                    // output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
+                    //output = objectMapper.readValue(input.getSourceAsString(), DateObject.class);
                     output = objectMapper.readValue(input.getSourceAsString(), DateObject.class);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -148,6 +155,8 @@ public class ElasticCRUD {
                                             Date dateObject = ((Date) className.newInstance());
                                             dateObject.setTime(Integer.valueOf((Integer) resultEntry.getValue()));
                                             output.put(resultEntry.getKey(), dateObject);
+                                        } else if (ZonedDateTime.class.isAssignableFrom(className)) {
+                                            output.put(resultEntry.getKey(), ZonedDateTime.parse((String)resultEntry.getValue(), fmt));
                                         }
                                     } catch (Exception e) {
                                         e.printStackTrace();
