@@ -6,6 +6,7 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuild
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.junit.*;
 
@@ -81,13 +82,18 @@ public class ElasticSearchTest {
         ElasticCRUD elastic = new ElasticCRUD(testBase.transportClient);
         //DateObject insertedItem = elastic.insertBasicDocument();
         BasicObject insertedItem = elastic.insertBasicDocument();
+       // System.out.println("insertedItem: " + insertedItem);
+        System.out.println("insertedItem json: " + insertedItem.toJSON());
 
        Iterator<BasicObject> results = elastic.getDocuemntsObject();
         //Iterator<DateObject> results = elastic.getDocuments();
        while (results.hasNext()) {
            BasicObject item = results.next();
+          // System.out.println("retrieved item: " + item);
+           System.out.println("retrieved item json: " + item.toJSON());
            //DateObject item = results.next();
-            Assert.assertEquals(insertedItem, item);
+           Assert.assertEquals(insertedItem.get("createDate"), item.get("createDate"));
+           Assert.assertEquals(insertedItem, item);
         }
 
     }
@@ -173,10 +179,38 @@ public class ElasticSearchTest {
                 testBase.transportClient.admin().indices().preparePutMapping(INDEX_NAME).setType(DOC_TYPE);
         JSONObject metaDataValue = new JSONObject();
         JSONObject dateValue = new JSONObject();
+        JSONArray mappingArray = new JSONArray();
+        JSONObject dynamicTemplate = new JSONObject();
+        JSONObject rulesValue = new JSONObject();
+        JSONObject rulesMappingValue = new JSONObject();
         dateValue.put("createDate", "java.util.Date");
         dateValue.put("createZonedDateTime", "java.time.ZonedDateTime");
+        dynamicTemplate.put("_default_", rulesValue);
+        rulesValue.put("match", "_id");
+        rulesValue.put("mapping", rulesMappingValue);
+        rulesMappingValue.put("type", "keyword");
+        rulesMappingValue.put("copy_to", "id");
+        mappingArray.add(dynamicTemplate);
         metaDataValue.put("_meta", dateValue);
+        metaDataValue.put("dynamic_templates", mappingArray);
         System.out.println(metaDataValue.toString());
         builder.setSource(metaDataValue.toJSONString()).get();
+        /**
+         * "mappings": {
+         "my_type": {
+         "dynamic_templates": [
+         {
+            "populate_id": {
+                "match":   "_id",
+                "mapping": {
+                    "type": "keyword",
+                    "copy_to": "id"
+                }
+            }
+         }
+         ]
+         }
+         }
+         */
     }
 }

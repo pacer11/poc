@@ -1,13 +1,8 @@
-import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
-import io.searchbox.client.JestClient;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -18,20 +13,15 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.reindex.UpdateByQueryAction;
-import org.elasticsearch.index.reindex.UpdateByQueryRequest;
-import org.elasticsearch.index.reindex.UpdateByQueryRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.text.SimpleDateFormat;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by jfaniyi on 2/19/17.
@@ -44,7 +34,8 @@ public class ElasticCRUD {
     private Client transportClient;
 
     private ObjectMapper objectMapper = new ObjectMapper();
-    DateTimeFormatter fmt = DateTimeFormatter.ISO_INSTANT.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n'Z'").withZone(ZoneId.of("UTC"));
+    DateTimeFormatter fmt = DateTimeFormatter.ISO_INSTANT.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneId.of("UTC"));
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
 
     public ElasticCRUD(Client transportClient) {
@@ -82,12 +73,12 @@ public class ElasticCRUD {
           BasicObject simpleObject = new BasicObject("idtesting");
           simpleObject.put("dockey", "docvalue");
           simpleObject.put("createDate", new Date());
-          simpleObject.put("createZonedDateTime", ZonedDateTime.now());
+          simpleObject.put("createZonedDateTime", ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC")));
           //simpleObject.put("createDate", new Date());
-          BasicObject nestedObject = new BasicObject("innerIdtesting");
-          nestedObject.put("innerDocKey", "myStringValue");
-         simpleObject.put("outerDocKey", nestedObject);
-         System.out.println("Json to string" + simpleObject.toJSON());
+          //BasicObject nestedObject = new BasicObject("innerIdtesting");
+          //nestedObject.put("innerDocKey", "myStringValue");
+         //simpleObject.put("outerDocKey", nestedObject);
+          System.out.println("Json before insert is: " + simpleObject.toJSON());
         IndexResponse indexResponse = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE, simpleObject.getId())
                     .setSource(simpleObject.toJSON()).get();
             transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
@@ -126,8 +117,6 @@ public class ElasticCRUD {
                //BasicObject output = null;
                  DateObject output = null;
                 try {
-                   // output = objectMapper.readValue(input.getSourceAsString(), BasicObject.class);
-                    //output = objectMapper.readValue(input.getSourceAsString(), DateObject.class);
                     output = objectMapper.readValue(input.getSourceAsString(), DateObject.class);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -144,16 +133,17 @@ public class ElasticCRUD {
         Iterator<SearchHit> searchHits = searchResponse.getHits().iterator();
         return Iterators.transform(searchHits, new Function<SearchHit, BasicObject>() {
                     public BasicObject apply(SearchHit input) {
-                        BasicObject output = new BasicObject(input.getId());
-                            Map<String, Object> resultMap = input.sourceAsMap();
-                            for (Map.Entry<String, Object> resultEntry : resultMap.entrySet()) {
+                        BasicObject output = new BasicObject();
+                        output.setId(input.getId());
+                        Map<String, Object> resultMap = input.sourceAsMap();
+                        for (Map.Entry<String, Object> resultEntry : resultMap.entrySet()) {
                                 Map<String, Object> metaDateMap = getMetaData();
                                 if (metaDateMap.containsKey(resultEntry.getKey())) {
                                     try {
                                         Class<?> className = Class.forName((String)metaDateMap.get(resultEntry.getKey()));
                                         if (Date.class.isAssignableFrom(className)) {
-                                            Date dateObject = ((Date) className.newInstance());
-                                            dateObject.setTime(Integer.valueOf((Integer) resultEntry.getValue()));
+                                            Date dateObject = dateFormat.parse((String)resultEntry.getValue());
+                                            //dateObject.setTime(Integer.valueOf((Integer) resultEntry.getValue()));
                                             output.put(resultEntry.getKey(), dateObject);
                                         } else if (ZonedDateTime.class.isAssignableFrom(className)) {
                                             output.put(resultEntry.getKey(), ZonedDateTime.parse((String)resultEntry.getValue(), fmt));
@@ -162,10 +152,9 @@ public class ElasticCRUD {
                                         e.printStackTrace();
                                     }
                                 } else {
-                                    output.putAll(resultMap);
+                                    output.put(resultEntry.getKey(), resultEntry.getValue());
                                 }
                             }
-                            output.putAll(input.sourceAsMap());
                             output.remove("id");
                         return output;
                     }
@@ -204,9 +193,10 @@ public class ElasticCRUD {
         Set<String> keys = map.keySet();
         for (String key : keys) {
             if (((Map<String, Object>) map.get(key)).containsKey("type")) {
-                fieldList.add(fieldName + "" + key);
+                fieldList.add( key);
             } else {
-                List<String> tempList = getList(fieldName + "" + key + ".", (Map<String, Object>) map.get(key));
+                //List<String> tempList = getList(fieldName + "" + key + ".", (Map<String, Object>) map.get(key));
+                List<String> tempList = getList(key + ".", (Map<String, Object>) map.get(key));
                 fieldList.addAll(tempList);
             }
         }
@@ -227,9 +217,9 @@ public class ElasticCRUD {
 
         Map<String, Object> metaDataMap = new HashMap<String, Object>();
         Map<String, Object> metaMap = (Map<String, Object>) map.get("_meta");
-        Set<String> keys = map.keySet();
+        Set<String> keys = metaMap.keySet();
         for (String key : keys) {
-            metaDataMap.put(key, map.get(key));
+            metaDataMap.put(key, metaMap.get(key));
         }
         return metaDataMap;
     }
