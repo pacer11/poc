@@ -1,12 +1,8 @@
 import org.elasticsearch.client.transport.TransportClient;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import pl.allegro.tech.embeddedelasticsearch.EmbeddedElastic;
-import pl.allegro.tech.embeddedelasticsearch.IndexSettings;
 import pl.allegro.tech.embeddedelasticsearch.PopularProperties;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -34,7 +30,17 @@ public class ElasticSearchBaseTest {
                   //  .withElasticVersion(elasticsearchVersion)
                     .withSetting(PopularProperties.TRANSPORT_TCP_PORT, PORT)
                     .withSetting(PopularProperties.CLUSTER_NAME, CLUSTER_NAME)
+                    .withSetting("path.conf", "/home/jfaniyi/IdeaProjects/elasticsearch/java/src/test/resources")
+                    .withSetting("searchguard.ssl.transport.enabled", true)
+                    .withSetting("searchguard.ssl.transport.keystore_filepath", "localhost.p12")
+                    .withSetting("searchguard.ssl.transport.keystore_password", "changeit")
+                    .withSetting("searchguard.ssl.transport.keystore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.transport.truststore_filepath", "localhost.p12")
+                    .withSetting("searchguard.ssl.transport.truststore_password", "changeit")
+                    .withSetting("searchguard.ssl.transport.truststore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.transport.enforce_hostname_verification", false)
                     .withDownloadUrl(new URL("file:///home/jfaniyi/Downloads/elasticsearch-5.0.0.zip"))
+                    .withPlugin("file:///home/jfaniyi/Downloads/search-guard-ssl-5.0.0-21.zip")
                     .withIndex(INDEX_NAME).build();
         } catch (MalformedURLException e) {
             e.printStackTrace();

@@ -1,16 +1,17 @@
 
+import com.floragunn.searchguard.ssl.SearchGuardSSLPlugin;
+import com.google.gson.JsonParser;
 import io.searchbox.client.JestClient;
-import io.searchbox.client.JestClientFactory;
-import io.searchbox.client.config.HttpClientConfig;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
+
+import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.junit.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -38,8 +39,17 @@ public class ElasticSearchTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Settings settings = Settings.builder().put("cluster.name", testBase.CLUSTER_NAME).build();
-        testBase.transportClient = new PreBuiltTransportClient(settings);
+        Settings settings = Settings.builder()
+                .put("cluster.name", testBase.CLUSTER_NAME)
+                .put("path.home", ".")
+                .put("searchguard.ssl.transport.enabled", true)
+                .put("searchguard.ssl.transport.keystore_filepath", "localhost.p12")
+                .put("searchguard.ssl.transport.keystore_type", "PKCS12")
+                .put("searchguard.ssl.transport.truststore_filepath", "localhost.p12")
+                .put("searchguard.ssl.transport.truststore_type", "PKCS12")
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .build();
+        testBase.transportClient = new PreBuiltTransportClient(settings, SearchGuardSSLPlugin.class);
         try {
             testBase.transportClient.addTransportAddress(
                     new InetSocketTransportAddress(InetAddress.getByName(testBase.ADDRESS), testBase.PORT)
@@ -48,12 +58,6 @@ public class ElasticSearchTest {
             //LOGGER.error("Couldn't add transport address" + ex);
         }
 
-        JestClientFactory factory = new JestClientFactory();
-        factory.setHttpClientConfig(new HttpClientConfig
-                .Builder("http://localhost:9400")
-                .multiThreaded(true)
-                .build());
-         client = factory.getObject();
     }
 
     @AfterClass
@@ -175,7 +179,20 @@ public class ElasticSearchTest {
     }
 
     private void populateMapping() {
-        PutMappingRequestBuilder builder =
+        InputStream inputStream = ElasticSearchTest.class.getResourceAsStream("/es/mapping.json");
+        String formattedString = null;
+        try {
+          String jsonString = IOUtils.toString(inputStream, "UTF-8");
+          JsonParser parser = new JsonParser();
+          formattedString = parser.parse(jsonString).toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        testBase.transportClient.admin().indices().prepareDelete(INDEX_NAME).get();
+        PutIndexTemplateRequestBuilder builder =
+                testBase.transportClient.admin().indices().preparePutTemplate("*").setSource(formattedString);
+        builder.get();
+        /**PutMappingRequestBuilder builder =
                 testBase.transportClient.admin().indices().preparePutMapping(INDEX_NAME).setType(DOC_TYPE);
         JSONObject metaDataValue = new JSONObject();
         JSONObject dateValue = new JSONObject();
@@ -186,15 +203,16 @@ public class ElasticSearchTest {
         dateValue.put("createDate", "java.util.Date");
         dateValue.put("createZonedDateTime", "java.time.ZonedDateTime");
         dynamicTemplate.put("_default_", rulesValue);
-        rulesValue.put("match", "_id");
-        rulesValue.put("mapping", rulesMappingValue);
-        rulesMappingValue.put("type", "keyword");
+        rulesValue.put("_id", rulesMappingValue);
+        //rulesValue.put("mappings", rulesMappingValue);
+        //rulesMappingValue.put("index", "not analyzed");
+        //rulesMappingValue.put("store", "true");
         rulesMappingValue.put("copy_to", "id");
-        mappingArray.add(dynamicTemplate);
+        //mappingArray.add(dynamicTemplate);
         metaDataValue.put("_meta", dateValue);
-        metaDataValue.put("dynamic_templates", mappingArray);
+        metaDataValue.put("mappings", dynamicTemplate);
         System.out.println(metaDataValue.toString());
-        builder.setSource(metaDataValue.toJSONString()).get();
+        builder.setSource(metaDataValue.toJSONString()).get();**/
         /**
          * "mappings": {
          "my_type": {

@@ -1,0 +1,32 @@
+{
+  "template" : "*",
+  "settings" : {
+    "index" : {
+      "number_of_replicas" : "1",
+      "number_of_shards" : "1"
+    }
+  },
+  "mappings" : {
+    "_default_" : {
+      "_meta" : {
+        "createDate" : "java.util.Date",
+        "createZonedDateTime" : "java.time.ZonedDateTime"
+      },
+      "dynamic" : "strict",
+      "properties" : {
+        "dockey" : {
+          "type" : "text"
+        },
+        "id" : {
+          "type" : "keyword"
+        },
+        "createDate" : {
+          "type" : "date"
+        },
+        "createZonedDateTime" : {
+          "type" : "date"
+        }
+      }
+    }
+  }
+}

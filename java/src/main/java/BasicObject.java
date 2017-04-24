@@ -15,10 +15,10 @@ import java.util.*;
 /**
  * Created by jfaniyi on 2/25/17.
  */
-public class BasicObject extends LinkedHashMap<String, Object> implements Serializable {
+public class BasicObject extends HashMap<String, Object> implements Serializable {
     @SerializedName("_id")
     private String _id;
-   private Map<String, Object> documentMap = new LinkedHashMap<>();
+   private Map<String, Object> documentMap;
   // private Map<String, Object> documentMap;
 
 
@@ -34,9 +34,10 @@ public class BasicObject extends LinkedHashMap<String, Object> implements Serial
 
     //Gson gson = getBuilder().create();
 
-    public BasicObject() {}
+    public BasicObject() { documentMap = new TreeMap<String, Object>(); }
 
     public BasicObject(String id) {
+        this();
         this._id = id;
         documentMap.put("_id", id);
     }
@@ -72,7 +73,7 @@ public class BasicObject extends LinkedHashMap<String, Object> implements Serial
 
     //public String toJSON() {return buildJSON(this).toString();}
 
-    public void remove(String key) { documentMap.remove(key);}
+    public Object remove(String key) { return documentMap.remove(key);}
 
     public int size() { return documentMap.size();}
 

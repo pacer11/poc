@@ -1,8 +1,8 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -74,15 +74,18 @@ public class ElasticCRUD {
           simpleObject.put("dockey", "docvalue");
           simpleObject.put("createDate", new Date());
           simpleObject.put("createZonedDateTime", ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC")));
+          //simpleObject.put("testing", "should not appear");
           //simpleObject.put("createDate", new Date());
           //BasicObject nestedObject = new BasicObject("innerIdtesting");
           //nestedObject.put("innerDocKey", "myStringValue");
          //simpleObject.put("outerDocKey", nestedObject);
+          simpleObject.put("id", simpleObject.remove("_id"));
           System.out.println("Json before insert is: " + simpleObject.toJSON());
         IndexResponse indexResponse = transportClient.prepareIndex(INDEX_NAME, DOC_TYPE, simpleObject.getId())
                     .setSource(simpleObject.toJSON()).get();
             transportClient.admin().indices().prepareRefresh(INDEX_NAME).get();
             getIndexMappting();
+          simpleObject.remove("id");
         return simpleObject;
     }
 
@@ -222,5 +225,19 @@ public class ElasticCRUD {
             metaDataMap.put(key, metaMap.get(key));
         }
         return metaDataMap;
+    }
+
+    private String getNestedPath(String key) {
+        Object nestedPathValue = getMetaData().get("NestedPaths");
+        if (nestedPathValue != null && List.class.isInstance(nestedPathValue)) {
+            for (String path : (List<String>)nestedPathValue) {
+                if (key.contains(path)) {
+                    return path;
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
     }
 }
