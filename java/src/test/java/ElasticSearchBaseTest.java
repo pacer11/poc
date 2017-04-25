@@ -5,6 +5,7 @@ import pl.allegro.tech.embeddedelasticsearch.PopularProperties;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -30,18 +31,27 @@ public class ElasticSearchBaseTest {
                   //  .withElasticVersion(elasticsearchVersion)
                     .withSetting(PopularProperties.TRANSPORT_TCP_PORT, PORT)
                     .withSetting(PopularProperties.CLUSTER_NAME, CLUSTER_NAME)
-                    .withSetting("path.conf", "/home/jfaniyi/IdeaProjects/elasticsearch/java/src/test/resources")
+                    .withSetting("http.host", "127.0.0.1")
+                    .withSetting("path.conf", "/home/jfaniyi/certificates/search-gaurd-ssl")
                     .withSetting("searchguard.ssl.transport.enabled", true)
-                    .withSetting("searchguard.ssl.transport.keystore_filepath", "localhost.p12")
-                    .withSetting("searchguard.ssl.transport.keystore_password", "changeit")
-                    .withSetting("searchguard.ssl.transport.keystore_type", "PKCS12")
-                    .withSetting("searchguard.ssl.transport.truststore_filepath", "localhost.p12")
-                    .withSetting("searchguard.ssl.transport.truststore_password", "changeit")
-                    .withSetting("searchguard.ssl.transport.truststore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.transport.keystore_filepath", "elasticsearch-keystore.jks")
+                    .withSetting("searchguard.ssl.transport.keystore_password", "changeme")
+                    //.withSetting("searchguard.ssl.transport.keystore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.transport.truststore_filepath", "truststore.jks")
+                    .withSetting("searchguard.ssl.transport.truststore_password", "changeme")
+                   // .withSetting("searchguard.ssl.transport.truststore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.http.enabled", true)
+                    .withSetting("searchguard.ssl.http.keystore_filepath", "elasticsearch-keystore.jks")
+                    .withSetting("searchguard.ssl.http.keystore_password", "changeme")
+                    //.withSetting("searchguard.ssl.transport.keystore_type", "PKCS12")
+                    .withSetting("searchguard.ssl.http.truststore_filepath", "truststore.jks")
+                    .withSetting("searchguard.ssl.http.truststore_password", "changeme")
+                    // .withSetting("searchguard.ssl.transport.truststore_type", "PKCS12")
                     .withSetting("searchguard.ssl.transport.enforce_hostname_verification", false)
                     .withDownloadUrl(new URL("file:///home/jfaniyi/Downloads/elasticsearch-5.0.0.zip"))
-                    .withPlugin("file:///home/jfaniyi/Downloads/search-guard-ssl-5.0.0-21.zip")
-                    .withIndex(INDEX_NAME).build();
+                    .withPlugin("file:///home/jfaniyi/Downloads/search-guard-ssl-5.0.0-21.zip").build();
+                   // .withStartTimeout(1, TimeUnit.MINUTES)
+                   // .withIndex(INDEX_NAME).build();
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }         

@@ -4,6 +4,7 @@ import com.google.gson.JsonParser;
 import io.searchbox.client.JestClient;
 
 import org.apache.commons.io.IOUtils;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -41,12 +42,15 @@ public class ElasticSearchTest {
         }
         Settings settings = Settings.builder()
                 .put("cluster.name", testBase.CLUSTER_NAME)
-                .put("path.home", ".")
+                .put("path.home", "/tmp/embedded-elasticsearch-temp-dir/elasticsearch-5.0.0")
+                .put("path.conf", "/home/jfaniyi/certificates/search-gaurd-ssl")
                 .put("searchguard.ssl.transport.enabled", true)
-                .put("searchguard.ssl.transport.keystore_filepath", "localhost.p12")
-                .put("searchguard.ssl.transport.keystore_type", "PKCS12")
-                .put("searchguard.ssl.transport.truststore_filepath", "localhost.p12")
-                .put("searchguard.ssl.transport.truststore_type", "PKCS12")
+                .put("searchguard.ssl.transport.keystore_filepath", "es-client-keystore.jks")
+               // .put("searchguard.ssl.transport.keystore_type", "PKCS12")
+                .put("searchguard.ssl.transport.truststore_filepath", "truststore.jks")
+                .put("searchguard.ssl.transport.keystore_password", "changeme")
+                .put("searchguard.ssl.transport.truststore_password", "changeme")
+               // .put("searchguard.ssl.transport.truststore_type", "PKCS12")
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .build();
         testBase.transportClient = new PreBuiltTransportClient(settings, SearchGuardSSLPlugin.class);
@@ -71,7 +75,7 @@ public class ElasticSearchTest {
 
     @Before
     public void refresh() {
-        testBase.embeddedElastic.refreshIndices();
+       // testBase.embeddedElastic.refreshIndices();
         populateMapping();
     }
 
@@ -188,7 +192,11 @@ public class ElasticSearchTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        testBase.transportClient.admin().indices().prepareDelete(INDEX_NAME).get();
+        IndicesExistsResponse response = testBase.transportClient.admin().indices().prepareExists(INDEX_NAME).get();
+        if (response.isExists()) {
+            testBase.transportClient.admin().indices().prepareDelete(INDEX_NAME).get();
+        }
+
         PutIndexTemplateRequestBuilder builder =
                 testBase.transportClient.admin().indices().preparePutTemplate("*").setSource(formattedString);
         builder.get();
